@@ -1,1 +1,0 @@
-LD_LIBRARY_PATH=/opt/blender-lts/lib python TextToSpline.py /opt/blender-lts/blender flag-spline.json test

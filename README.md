@@ -6,6 +6,10 @@
 
 ### Linux
 
+```
+cd TextToSpline && ./GenerateAlphabets.sh ../Generated Letters && cd ..
+
+```
 
 ## 文件
 

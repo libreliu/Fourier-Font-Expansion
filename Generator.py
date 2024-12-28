@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import dataclasses
+import argparse
+import json
+import sys
 
 from sympy.printing.numpy import NumPyPrinter
 
@@ -21,11 +24,11 @@ class FourierSeries:
     terms: dict
 
     def plot(self):
-        nSamples = len(series.terms) * 5 + 5
+        nSamples = len(self.terms) * 5 + 5
         t_vals = np.linspace(0, 2 * np.pi, nSamples)
         complex_vals = np.zeros((nSamples, 2), dtype=np.float64)
 
-        for term in series.terms.values():
+        for term in self.terms.values():
             # Compute complex value of each term and accumulate
             complex_vals[:, 0] += term.Real * np.cos(term.n * t_vals) - term.Imag * np.sin(term.n * t_vals)
             complex_vals[:, 1] += term.Imag * np.cos(term.n * t_vals) + term.Real * np.sin(term.n * t_vals)
@@ -67,7 +70,10 @@ class GLSLEmitter:
             Output += f"FourierTerm {dataName}[{numCoeff}] = FourierTerm[{numCoeff}](\n"
             for idx in sortedTerms:
                 termCoeff = dataSeries.terms[idx]
-                Output += f"  FourierTerm({termCoeff.Real}, {termCoeff.Imag}), // i = {idx}\n"
+                if idx != sortedTerms[-1]:
+                    Output += f"  FourierTerm({termCoeff.Real}, {termCoeff.Imag}), // i = {idx}\n"
+                else:
+                    Output += f"  FourierTerm({termCoeff.Real}, {termCoeff.Imag}) // i = {idx}\n"
             Output += f");\n"
             Output += "\n"
         
@@ -133,32 +139,9 @@ def parametricFunctionToFourierSeriesNumericalPreNP(t, funcx, funcy, nSeries=10)
 
     return series
 
-def plotSeries(series: FourierSeries):
-    nSamples = len(series.terms) * 50 + 200
-    t_vals = np.linspace(0, 2 * np.pi, nSamples)
-    complex_vals = np.zeros((nSamples, 2), dtype=np.float64)
-
-    for term in series.terms.values():
-        # Compute complex value of each term and accumulate
-        complex_vals[:, 0] += term.Real * np.cos(term.n * t_vals) - term.Imag * np.sin(term.n * t_vals)
-        complex_vals[:, 1] += term.Imag * np.cos(term.n * t_vals) + term.Real * np.sin(term.n * t_vals)
-
-    plt.figure(figsize=(8, 8))
-    plt.plot(complex_vals[:, 0], complex_vals[:, 1], label="Fourier Series Path")
-    plt.title("Fourier Series Path in the Complex Plane")
-    plt.xlabel("Real Part")
-    plt.ylabel("Imaginary Part")
-    plt.axhline(0, color='gray', lw=0.5)
-    plt.axvline(0, color='gray', lw=0.5)
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-
-if __name__ == '__main__':
-
+def test():
     t, funcx, funcy = BezierPiecewiseBuilder.testReturnF()
-    series = parametricFunctionToFourierSeriesNumericalPreNP(t, funcx, funcy, 25)
+    series = parametricFunctionToFourierSeriesNumericalPreNP(t, funcx, funcy, 10)
     series.plot()
 
     emitter = GLSLEmitter()
@@ -166,3 +149,68 @@ if __name__ == '__main__':
     shaderCode = emitter.emitShaderData()
 
     print(shaderCode)
+
+def generateLetters(folderPath, filenamePrefix, Nseries):
+    allLetters = [chr(codePoint) for codePoint in range(ord('a'), ord('z') + 1)] + \
+        [chr(codePoint) for codePoint in range(ord('A'), ord('Z') + 1)]
+    allLetterMap = {}
+    
+    for letter in allLetters:
+        if letter.isupper():
+            fileName = f"{folderPath}/{filenamePrefix}_CAPITAL_{letter}.json"
+        else:
+            fileName = f"{folderPath}/{filenamePrefix}_{letter}.json"
+
+        with open(fileName, "rb") as f:
+            bezierInfo = json.load(f)
+            allLetterMap[letter] = bezierInfo
+    
+    shaderCode = f"#define N_FOURIER_SERIES {Nseries}\n"
+    isFirst = True
+    for idx, (letter, letterInfo) in enumerate(allLetterMap.items()):
+        print(f"Processing {letter} ({idx}/{len(allLetterMap)})...", file=sys.stderr)
+        builder = BezierPiecewiseBuilder()
+
+        for spline in letterInfo:
+            bezierPoints = spline['bezier_points']
+            numPoints = len(bezierPoints)
+            for i in range(numPoints):
+                p0 = bezierPoints[i % numPoints]['coordinates'][:2]
+                p1 = bezierPoints[i % numPoints]['handle_right'][:2]
+                p2 = bezierPoints[(i+1) % numPoints]['handle_left'][:2]
+                p3 = bezierPoints[(i+1) % numPoints]['coordinates'][:2]
+
+                builder.pushBezier(p0, p1, p2, p3)
+
+        t, funcx, funcy = builder.toSympyFunctionComponentized()
+        series = parametricFunctionToFourierSeriesNumericalPreNP(t, funcx, funcy, Nseries)
+
+        emitter = GLSLEmitter()
+        emitter.addData(letter, series)
+        shaderCode += emitter.emitShaderData(isFirst)
+
+        if isFirst:
+            isFirst = False
+
+    print(shaderCode)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Fourier term generator")
+
+    parser.add_argument(
+        "--operation",
+        choices=["test", "generate_letters"],
+        default="test",
+        help="The operation to perform (default: test)"
+    )
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    if args.operation == 'test':
+        test()
+    elif args.operation == 'generate_letters':
+        generateLetters("./Generated", "Letters", 10)
+    else:
+        raise Exception(f"Unknown operation {args.operation}")
