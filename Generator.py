@@ -168,7 +168,7 @@ def generateLetters(folderPath, filenamePrefix, Nseries):
     shaderCode = f"#define N_FOURIER_SERIES {Nseries}\n"
     isFirst = True
     for idx, (letter, letterInfo) in enumerate(allLetterMap.items()):
-        print(f"Processing {letter} ({idx}/{len(allLetterMap)})...", file=sys.stderr)
+        print(f"Processing {letter} ({idx + 1}/{len(allLetterMap)})...", file=sys.stderr)
         builder = BezierPiecewiseBuilder()
 
         for spline in letterInfo:
@@ -186,7 +186,7 @@ def generateLetters(folderPath, filenamePrefix, Nseries):
         series = parametricFunctionToFourierSeriesNumericalPreNP(t, funcx, funcy, Nseries)
 
         emitter = GLSLEmitter()
-        emitter.addData(letter, series)
+        emitter.addData(f"FourierDataInst_{letter}", series)
         shaderCode += emitter.emitShaderData(isFirst)
 
         if isFirst:
