@@ -13,8 +13,6 @@ python Generator.py --operation generate_letters > shaderCommon.glsl
 
 > Windows 操作类似。
 
-## 文件
-
 ## 解释
 
 [Explaination.md (请使用支持行内公式的 Markdown 编辑器打开)](Explaination.md)
