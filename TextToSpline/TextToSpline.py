@@ -19,6 +19,11 @@ def main():
     else:
         target_text = "example_text"
 
+    if len(argv) > 2:
+        font_ttf_path = argv[2]
+    else:
+        font_ttf_path = None
+
     print(f"Output file path: {output_file_path}, target text: {target_text}")
 
     # Delete any existing objects
@@ -27,6 +32,11 @@ def main():
     # Add new text object
     bpy.ops.object.text_add(enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
     ob = bpy.context.scene.objects['Text']
+
+    # change font to desired if specified
+    if font_ttf_path is not None:
+        bpy.ops.font.open(filepath=font_ttf_path, relative_path=True)
+        ob.data.font = bpy.data.fonts[1]
 
     # Modify the text body
     ob.data.body = f"{target_text}"

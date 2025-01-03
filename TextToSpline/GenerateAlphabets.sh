@@ -9,6 +9,9 @@ fi
 OUTPUT_FOLDER=$1
 FILENAME_PREFIX=$2
 
+# This is optional; could be left empty
+FONT_PATH="../Fonts/Permanent_Marker/PermanentMarker-Regular.ttf"
+
 # Create the output folder if it doesn't exist
 mkdir -p "$OUTPUT_FOLDER"
 
@@ -23,7 +26,7 @@ for CHAR in {a..z} {A..Z}; do
     fi
     
     # Run the script with the current character
-    ./RunBlender.sh "$OUTPUT_FILE" "$CHAR"
+    ./RunBlender.sh "$OUTPUT_FILE" "$CHAR" "$FONT_PATH"
 done
 
 
