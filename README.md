@@ -1,15 +1,17 @@
 # Fourier-Font-Expansion
 
-## Setup
-
-### Windows
+## 使用指南
 
 ### Linux
 
-```
-cd TextToSpline && ./GenerateAlphabets.sh ../Generated Letters && cd ..
+需要事先安装有 Blender 4.2.4 LTS，并配置好 `TextToSpline` 内的相应生成脚本。
 
 ```
+cd TextToSpline && ./GenerateAlphabets.sh ../Generated Letters && cd ..
+python Generator.py --operation generate_letters > shaderCommon.glsl
+```
+
+> Windows 操作类似。
 
 ## 文件
 
@@ -120,7 +122,6 @@ c_k = \frac{1}{2\pi} \int_{0}^{2 \pi} F(t) e^{-ik t} dt
 $$
 
 这里直接采用数值积分的方式来进行计算会比较方便，不需要求出解析解；虽然，作为次数不超过二次的多项式，求出解析的积分解是相对平凡的。
-
 
 
 ### 相关链接
